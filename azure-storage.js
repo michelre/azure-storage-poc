@@ -7,7 +7,7 @@ import conf from './conf';
 const { 'azure-storage': azureStorage } = conf;
 
 const key = azureStorage['account-key'];
-const accountName = azureStorage['account-name']);
+const accountName = azureStorage['account-name'];
 
 const blobService = Promise.promisifyAll(azure.createBlobService(accountName, key));
 const unlink = Promise.promisify(fs.unlink);
