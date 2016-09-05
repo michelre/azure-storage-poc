@@ -20,6 +20,18 @@ export const uploadFile = ({ originalname, path }, directoryPath) => {
   });
 };
 
-export const getReport = (report, writeStream) => {
-  return blobService.getBlobToStreamAsync('reports', report, writeStream);
+export const getReport = (report, writeStream) =>
+  blobService.getBlobToStreamAsync('reports', report, writeStream);
+
+export const listReports = (...args) => {
+  const filteredArgs = args.filter(e => e)
+  if(filteredArgs.length > 0){
+    return blobService.listBlobsSegmentedWithPrefixAsync('reports', filteredArgs.join('/'), null)
+      .then(({ entries }) => entries);
+  }
+  return blobService.listBlobsSegmentedAsync('reports', null)
+    .then(({ entries }) => entries);
 }
+
+export const deleteReport = (report) =>
+  blobService.deleteBlobAsync('reports', report)
