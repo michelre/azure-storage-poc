@@ -1,8 +1,9 @@
 # POC - Reports storage using Azure Storage
 
 ### List all Reports
-[http://localhost:5555/reports]()
-[http://localhost:5555/reports](http://localhost:5555/reports?partner=climateck)
+[http://localhost:5555/reports](http://localhost:5555/reports)
+
+[http://localhost:5555/reports?partner=climateck](http://localhost:5555/reports?partner=climateck)
 
 ### Download a Report
 
