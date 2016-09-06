@@ -1,6 +1,7 @@
 import 'babel-polyfill';
 import express from 'express';
 import multer from 'multer';
+import basicAuth from 'basic-auth';
 
 import { createShare, uploadFile, getReport,
   listReports, deleteReport } from './azure-storage';
@@ -9,33 +10,46 @@ const app = express();
 const upload = multer({ dest: 'uploads/' });
 const PORT = process.env.PORT || 3000;
 
+const auth = function (req, res, next) {
+  const unauthorized = (res) => {
+    res.set('WWW-Authenticate', 'Basic realm=Authorization Required');
+    return res.sendStatus(401);
+  };
+
+  const user = basicAuth(req);
+
+  if (!user || !user.name || !user.pass) {
+    return unauthorized(res);
+  };
+
+  if (user.name === 'foo' && user.pass === 'bar') {
+    return next();
+  } else {
+    return unauthorized(res);
+  };
+};
+
 app.get('/status', (req, res) => {
   res.send({ status: 'OK' });
 });
 
 app.post('/report', upload.single('report'), (req, res) => {
-  const { partner, customer, site } = req.query;
-  uploadFile(req.file, [partner, customer, site].join('/'))
+  const { partner, customer, site, type, country } = req.query;
+  uploadFile(req.file, [country, partner, customer, site, type].join('/'))
     .then((d) => res.send({ status: 'OK' }))
     .catch(err => res.status(500).send(err));
 });
 
-//http://localhost:5555/report/monthly_improve-energy_prod-to-m4_en_2016-06-01_2016-06-30.pdf?partner=r-g-project&customer=stable-sites&site=m4
-app.get('/report/:name', (req, res) => {
+app.get('/report/:name', auth, (req, res) => {
   const { partner, customer, site } = req.query;
-  getReport([partner, customer, site, req.params.name].join('/'), res);
+  getReport([country, partner, customer, site, type, req.params.name].join('/'), res);
 });
 
-//http://localhost:5555/report/multi_improve-hvac_cop-culoz_en_2016-01-01_2016-06-30.pptx?partner=climateck
-app.get('/reports', (req, res) => {
-  const { partner, customer, site } = req.query;
-  listReports(partner, customer, site).then(reports => res.send(reports));
-});
+app.get('/reports', auth, (req, res) => listReports(...req.query).then(reports => res.send(reports)));
 
-//http://localhost:5555/report/multi_improve-hvac_cop-culoz_en_2016-01-01_2016-06-30.pptx?partner=climateck&customer=mairie-culoz&site=pac-creche-culoz
 app.delete('/report/:name', (req, res) => {
-  const { partner, customer, site } = req.query;
-  deleteReport([partner, customer, site, req.params.name].join('/'))
+  const { country, partner, customer, site, type } = req.query;
+  deleteReport([country, partner, customer, site, type, req.params.name].join('/'))
     .then(() => res.send({ status: 'OK'}));
 });
 

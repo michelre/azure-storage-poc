@@ -2,6 +2,7 @@ import azure from 'azure-storage';
 import Promise from 'bluebird';
 import co from 'co';
 import fs from 'fs';
+
 import conf from './conf';
 
 const { 'azure-storage': azureStorage } = conf;
