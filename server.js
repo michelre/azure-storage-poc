@@ -33,23 +33,26 @@ app.get('/status', (req, res) => {
   res.send({ status: 'OK' });
 });
 
-app.post('/report', upload.single('report'), (req, res) => {
+app.post('/report', auth, upload.single('report'), (req, res) => {
   const { partner, customer, site, type, country } = req.query;
-  uploadFile(req.file, [country, partner, customer, site, type].join('/'))
+  uploadFile(req.file, [country, partner, customer, site, type])
     .then((d) => res.send({ status: 'OK' }))
     .catch(err => res.status(500).send(err));
 });
 
 app.get('/report/:name', auth, (req, res) => {
-  const { partner, customer, site } = req.query;
-  getReport([country, partner, customer, site, type, req.params.name].join('/'), res);
+  const { country, partner, customer, site, type } = req.query;
+  getReport([country, partner, customer, site, type], req.params.name, res);
 });
 
-app.get('/reports', auth, (req, res) => listReports(...req.query).then(reports => res.send(reports)));
-
-app.delete('/report/:name', (req, res) => {
+app.get('/reports', auth, (req, res) => {
   const { country, partner, customer, site, type } = req.query;
-  deleteReport([country, partner, customer, site, type, req.params.name].join('/'))
+  listReports([country, partner, customer, site, type]).then(reports => res.send(reports));
+});
+
+app.delete('/report', auth, (req, res) => {
+  const { country, partner, customer, site, type, report } = req.query;
+  deleteReport([country, partner, customer, site, type, report])
     .then(() => res.send({ status: 'OK'}));
 });
 

@@ -2,37 +2,44 @@ import azure from 'azure-storage';
 import Promise from 'bluebird';
 import co from 'co';
 import fs from 'fs';
+import R from 'ramda';
 
 import conf from './conf';
+import { createDirectoryStructure, generateName } from './utils';
 
 const { 'azure-storage': azureStorage } = conf;
 
 const key = azureStorage['account-key'];
 const accountName = azureStorage['account-name'];
 
-const blobService = Promise.promisifyAll(azure.createBlobService(accountName, key));
+const fileService = Promise.promisifyAll(azure.createFileService(accountName, key));
 const unlink = Promise.promisify(fs.unlink);
 
-export const uploadFile = ({ originalname, path }, directoryPath) => {
+export const uploadFile = ({ originalname, path }, directories) => {
+  const dirStructure = createDirectoryStructure(directories)
   return co(function* (){
-    yield blobService.createContainerIfNotExistsAsync('reports');
-    yield blobService.createBlockBlobFromLocalFileAsync('reports', `${directoryPath}/${originalname}`, path);
+    yield fileService.createShareIfNotExistsAsync('reports');
+    for(let i = 0; i < dirStructure.length; i++){
+      yield fileService.createDirectoryIfNotExistsAsync('reports', dirStructure[i]);
+    }
+    const { exists } = yield fileService.doesFileExistAsync('reports', R.last(dirStructure), originalname);
+    yield fileService.createFileFromLocalFileAsync('reports', R.last(dirStructure), originalname, path);
     yield unlink(path);
   });
 };
 
-export const getReport = (report, writeStream) =>
-  blobService.getBlobToStreamAsync('reports', report, writeStream);
+export const getReport = (directories,report, writeStream) => {
+  const dir = R.last(createDirectoryStructure(directories));
+  return fileService.getFileToStreamAsync('reports', dir, report, writeStream);
+};
 
-export const listReports = (...args) => {
-  const filteredArgs = args.filter(e => e)
-  if(filteredArgs.length > 0){
-    return blobService.listBlobsSegmentedWithPrefixAsync('reports', filteredArgs.join('/'), null)
-      .then(({ entries }) => entries);
-  }
-  return blobService.listBlobsSegmentedAsync('reports', null)
-    .then(({ entries }) => entries);
-}
+export const listReports = (directories) => {
+  const dir = R.last(createDirectoryStructure(R.filter(dir => dir, directories)));
+  const p = fileService.listFilesAndDirectoriesSegmentedAsync('reports', dir, null);
+  return p.then(({ entries }) => entries);
+};
 
-export const deleteReport = (report) =>
-  blobService.deleteBlobAsync('reports', report)
+export const deleteReport = (reportPath) => {
+  const dir = createDirectoryStructure(R.take(reportPath.length -1, reportPath));
+  return fileService.deleteFileIfExistsAsync('reports', R.last(dir), R.last(reportPath))
+};
