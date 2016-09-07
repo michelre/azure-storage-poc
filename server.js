@@ -47,13 +47,14 @@ app.get('/report/:name', auth, (req, res) => {
 
 app.get('/reports', auth, (req, res) => {
   const { country, partner, customer, site, type } = req.query;
-  listReports([country, partner, customer, site, type]).then(reports => res.send(reports));
+  listReports([country, partner, customer, site, type])
+    .then(reports => res.send(reports), err => res.send(err));
 });
 
-app.delete('/report', auth, (req, res) => {
-  const { country, partner, customer, site, type, report } = req.query;
-  deleteReport([country, partner, customer, site, type, report])
-    .then(() => res.send({ status: 'OK'}));
+app.delete('/report/:name', auth, (req, res) => {
+  const { country, partner, customer, site, type } = req.query;
+  deleteReport([country, partner, customer, site, type, req.params.name])
+    .then(() => res.send({ status: 'OK'}), err => res.send(err));
 });
 
 app.listen(PORT, function () {

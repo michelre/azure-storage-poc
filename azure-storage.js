@@ -34,7 +34,7 @@ export const getReport = (directories,report, writeStream) => {
 };
 
 export const listReports = (directories) => {
-  const dir = R.last(createDirectoryStructure(R.filter(dir => dir, directories)));
+  const dir = R.last(createDirectoryStructure(R.takeWhile(dir => dir, directories)));
   const p = fileService.listFilesAndDirectoriesSegmentedAsync('reports', dir, null);
   return p.then(({ entries }) => entries);
 };

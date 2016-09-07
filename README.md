@@ -1,29 +1,70 @@
 # POC - Reports storage using Azure Storage
 
+### Introduction
+The file-storage branch use the File service from Azure Storage
+
 ### Install
-Clone the repository, make a copy of the conf/conf.sample.json file and rename it conf.json. Provide the account name and the account key in this file.
+```sh
+$ git clone https://github.com/michelre/azure-storage-poc.git
+$ cd azure-storage-poc && git checkout file-storage
+$ npm install
+$ cp conf/conf.sample.json conf/conf.json
+```
+Provide the account name and the account key within the conf.json file.
 
 ### Start the server
 ```sh
-PORT=5555 npm start-server
+$ PORT=5555 npm start-server
 ```
 
-### List all Reports
-[http://localhost:5555/reports](http://localhost:5555/reports)
+### Unit tests
 
-[http://localhost:5555/reports?partner=climateck](http://localhost:5555/reports?partner=climateck)
+```sh
+$ npm run test
+```
+
+### List all files and directories
+
+#### GET /reports?country=<XXX>&partner=<XXX>&customer=<XXX>&site=<XXX>&type=<XXX>
+
+Requête:
+```sh
+curl -X GET -H "Authorization: Basic Zm9vOmJhcg==" "http://127.0.0.1:5555/reports?country=france"
+```
+Response:
+```json
+{"files":[],"directories":[{"name":"r-g-project"}]}
+```
+
+Requête:
+```sh
+curl -X GET -H "Authorization: Basic Zm9vOmJhcg==" "http://127.0.0.1:5555/reports?country=france&partner=r%20g%20project&customer=stable-sites&site=m4&type=multi"
+```
+Response:
+```json
+{"files":[{"name":"monthly_improve-energy-and-operation_ecole-des-arts_fr_2016-08-01_2016-08-31.pdf","contentLength":"263112"}],"directories":[]}
+```
 
 ### Download a Report
 
-[http://localhost:5555/report/monthly_view-operation_prod-to-m4_en_2016-06-01_2016-06-30.pdf?partner=r-g-project&customer=stable-sites&site=m4](http://localhost:5555/report/monthly_view-operation_prod-to-m4_en_2016-06-01_2016-06-30.pdf?partner=r-g-project&customer=stable-sites&site=m4)
+#### GET /report/:reportName?country=<XXX>&partner=<XXX>&customer=<XXX>&site=<XXX>&type=<XXX>
+
+```sh
+curl -X GET -H "Authorization: Basic Zm9vOmJhcg==" "http://127.0.0.1:5555/report/monthly_improve-energy-and-operation_ecole-des-arts_fr_2016-08-01_2016-08-31.pdf?country=france&partner=r%20g%20project&customer=stable-sites&site=m4&type=multi" > report.pdf
+```
 
 ### Add new Report
 
-POST [http://localhost:5555/report?partner=r-g-project&customer=stable-sites&site=m4](http://localhost:5555/report?partner=r-g-project&customer=stable-sites&site=m4)
-
+#### POST /report?country=<XXX>&partner=<XXX>&customer=<XXX>&site=<XXX>&type=<XXX>
 BODY: form-data with a key report that contains the binary file
+```sh
+curl -X POST -H "Authorization: Basic Zm9vOmJhcg==" -H "Content-Type: multipart/form-data" -F "report=@" "http://localhost:5555/report?country=France&partner=r%20g%20project&customer=stable-sites&site=m4&type=multi"
+```
 
 ### Remove a Report
+
+#### DELETE /report/:reportName?country=<XXX>&partner=<XXX>&customer=<XXX>&site=<XXX>&type=<XXX>
+
 ```sh
-curl -X DELETE "http://localhost:5555/report/monthly_view-operation_prod-to-m4_en_2016-06-01_2016-06-30.pdf?partner=r-g-project&customer=stable-sites&site=m4"
+curl -X DELETE -H "Authorization: Basic Zm9vOmJhcg==" "http://localhost:5555/report/monthly_improve-energy-and-operation_ecole-des-arts_fr_2016-08-01_2016-08-31.pdf?country=France&partner=r%20g%20project&customer=stable-sites&site=m4&type=multi"
 ```
